@@ -1,0 +1,13 @@
+Cython
+docutils
+graphviz
+joblib
+Keras
+matplotlib
+numpy
+pandas
+scikit-learn
+scipy
+tensorflow
+tensorflow-tensorboard
+opencv-python
