@@ -11,3 +11,4 @@ scipy
 tensorflow
 tensorflow-tensorboard
 opencv-python
+python-graphviz
