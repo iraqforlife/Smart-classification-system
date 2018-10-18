@@ -21,7 +21,7 @@ import random
 
 import graphviz
 import matplotlib.pyplot as plt
-from Image import Image
+from image import Image
 from sklearn import preprocessing, tree
 #from sklearn.datasets import load_iris
 
