@@ -18,31 +18,30 @@ GTI770-A18-02
 import math
 
 import cv2 as cv
-import graphviz
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.misc import face, imread, imshow
 from skimage import img_as_ubyte
 from skimage.color import rgb2gray
 from skimage.filters import threshold_otsu
-from sklearn import preprocessing, tree
-from sklearn.datasets import load_iris
 
 class Image:
+    """
+    Class used to extract data from an image
+    """
     def __init__(self, path, label, answer):
         """
-             The only construct is to build an object type image that has all the elements required to make a decision weather it is
-             a smooth or spiral galaxy
-             
-             Args:
-                 self : refers to the class
-                 path : Where the image is stored
-                 label : The image name 
-                 answer : The final answer (smooth or spiral). This is the answer from the data set. 
-                          It is used to verify after making a decision. 
-                          
-              Returns:
-                  An Image object with the image manipulations
+        The only construct is to build an object type image that has all the elements required to make a decision weather it is
+        a smooth or spiral galaxy
+        
+        Args:
+            self : refers to the class
+            path : Where the image is stored
+            label : The image name 
+            answer : The final answer (smooth or spiral). This is the answer from the data set. 
+                    It is used to verify after making a decision. 
+                    
+        Returns:
+            An Image object with the image manipulations
          """
         self.Path = path
         self.Label = label
