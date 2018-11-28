@@ -16,6 +16,9 @@ Group :
 GTI770-A18-02
 """
 
+from algos import decisionTree as Tree
+from algos import Knn as Knn
+from algos import Bayes as Bayes
 import csv
 import math
 import os
@@ -23,6 +26,7 @@ import os
 import graphviz
 import numpy as np
 from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
 import tensorflow as tf
 from tensorflow import keras
 
@@ -46,10 +50,6 @@ ALL_GALAXY_PRIMITIVE = r"data\csv\galaxy\galaxy_feature_vectors.csv"
 ALL_SPAM_PRIMITIVE = r"data\csv\spam\spam.csv"
 
 #Algo params
-TREE_DEPTH = [None, 3, 5, 10]
-EXTRACT_TREE_PDF = False
-N_NEIGHBORS = [3, 5, 10]
-WEIGHTS = ['uniform', 'distance']
 LAYERS_ACTIVATION = 'relu'
 LAST_LAYER_ACTIVATION = 'sigmoid'
 TENSORBOARD_SUMMARY = r"tensorboard"
@@ -59,6 +59,65 @@ PRIMITIVE_SCANNING = False
 DOMERGE = False
 PRINT_GRAPH = True
 #TEST_NBSAMPLES = 50
+
+def svm():    
+    #linear    
+    print("SVM linear")
+    c=[0.001,0.1,1.0,10.0]
+    params = dict(kernel=['linear'], C=c ,class_weight=['balanced'], cache_size=[2048])
+    grid = GridSearchCV(SVC(), param_grid=params, cv=dataset_splitter, n_jobs=-1, iid=True)
+    
+    #Fit the feature to svm algo
+    grid.fit(features_SVM, answers)
+    
+    #build table
+    outPut = []
+    y1 = []
+    for i in range(0, 4):
+        outPut.append([grid.cv_results_['params'][i]['C'],
+                          "{0:.2f}%".format(grid.cv_results_['mean_test_score'][i]*100)])
+        y1.append(grid.cv_results_['mean_test_score'][i]*100)
+    
+    #print table
+    print(tabulate(outPut, headers=['Variable C','class_weight= {‘balanced’}']))
+    print("The best parameters are ", grid.best_params_," with a score of {0:.2f}%".format(float(grid.best_score_)* 100))
+    
+    #rbf
+    print("\nSVM rbf")
+    params = dict(kernel=['rbf'], C=c, gamma=c ,class_weight=['balanced'], cache_size=[2048])
+    grid = GridSearchCV(SVC(), param_grid=params, cv=dataset_splitter, n_jobs=-1, iid=True)
+    
+    #Fit the feature to svm algo
+    grid.fit(features_SVM, answers)
+    
+    #build table
+    outPut = []
+    outPut.append(["0.001",
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][0]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][1]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][2]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][3]*100)])
+    outPut.append(["0.1",
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][4]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][5]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][6]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][7]*100)])
+    outPut.append(["1.0",
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][8]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][9]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][10]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][11]*100)])
+    outPut.append(["10.0",
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][12]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][13]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][14]*100),
+                   "{0:.2f}%".format(grid.cv_results_['mean_test_score'][15]*100)])
+    
+    #print table
+    print(tabulate(outPut, headers=['Variable C','a=0.001','a=0.1','a=1.0','a=10.0']))
+    print("The best parameters are ", grid.best_params_," with a score of {0:.2f}%".format(float(grid.best_score_)* 100))
+    
+    print("-> Done\n\n")
 
 def neuralNetwork(runId, networkFrame, epoch, learning_rate):
     # Format arrays to np arrays
@@ -76,21 +135,20 @@ def neuralNetwork(runId, networkFrame, epoch, learning_rate):
             features_test.append(features[elem])
             answers_test.append(answers[elem])
 
-    print("1.Initializing Neural Network for run #" + str(runId) + "\n")
-    print("TensorFlow version:" + tf.VERSION + ", Keras version:" + tf.keras.__version__ + "\n")
+    print("1.Initializing Neural Network for run #" + str(runId))
 
     # Create a default in-process session.
     directory = TENSORBOARD_SUMMARY + "/run" + str(runId)
     if not os.path.exists(directory):
         os.makedirs(directory)
-    print("Writing TensorBoard summary writer at :" + directory + "\n")
-    tbCallBack = keras.callbacks.TensorBoard(log_dir=directory, histogram_freq=1, write_graph=True, write_images=False)
+    print("TensorBoard summary writer at :" + directory + "\n")
+    tbCallBack = keras.callbacks.TensorBoard(log_dir=directory, histogram_freq=0, write_graph=False, write_images=False)
     
     # Parameters
     dimension = len(features[0])
     layers = networkFrame
     epoch = epoch
-    batch_size = 200
+    batch_size = 600
     learning_rate = learning_rate
     
     # The network type
@@ -100,18 +158,16 @@ def neuralNetwork(runId, networkFrame, epoch, learning_rate):
     # Set layer in model
     # First layer is set according to data dimension
     neuralNetwork_model.add(keras.layers.Dense(dimension, input_dim=dimension, kernel_initializer='random_normal', bias_initializer='zeros', activation=LAYERS_ACTIVATION))
-    neuralNetwork_model.add(keras.layers.Dropout(0.5))
+    neuralNetwork_model.add(keras.layers.Dropout(0.2))
     # Other layer set using layers array
     for perceptron in layers:
         if len(layers) == counter:
             # Last layer (2 neurons for 2 possible class, SIGMOID ensure result between 1 and 0)
             neuralNetwork_model.add(keras.layers.Dense(1, kernel_initializer='random_normal', bias_initializer='zeros', activation=LAST_LAYER_ACTIVATION))
-            #print("Layer #" + str(counter) + ": dimension = " + str(2) + ", activation = " + LAST_LAYER_ACTIVATION)
         else:
             # Adds Layer
             neuralNetwork_model.add(keras.layers.Dense(perceptron, kernel_initializer='random_normal', bias_initializer='zeros', activation=LAYERS_ACTIVATION))
-            neuralNetwork_model.add(keras.layers.Dropout(0.5))
-            #print("Layer #" + str(counter) + ": dimension = " + str(perceptron) + ", activation = " + LAYERS_ACTIVATION)
+            neuralNetwork_model.add(keras.layers.Dropout(0.2))
         counter = counter + 1
 
     # Compile the network according to previous settings
@@ -124,16 +180,16 @@ def neuralNetwork(runId, networkFrame, epoch, learning_rate):
 
     # Fit model to data
     print("\n2.Training\n")
-    neuralNetwork_model.fit(np.array(features_train), np.array(answers_train), 
-                            epochs=epoch, 
-                            batch_size=batch_size, 
+    neuralNetwork_model.fit(np.array(features_train), np.array(answers_train),
+                            epochs=epoch,
+                            batch_size=batch_size,
                             validation_data=(np.array(features_test), np.array(answers_test)),
-                            callbacks=[tbCallBack], 
-                            verbose=0)
+                            callbacks=[tbCallBack],
+                            verbose=2)
 
     # Evaluation
-    scores = neuralNetwork_model.evaluate(np.array(features_train), np.array(answers_train), verbose=1)
-    print("\n%s: %.2f%%" % (neuralNetwork_model.metrics_names[1], scores[1]*100))
+    #scores = neuralNetwork_model.evaluate(np.array(features_train), np.array(answers_train), verbose=1)
+    #print("\n%s: %.2f%%" % (neuralNetwork_model.metrics_names[1], scores[1]*100))
 
     # Clear previous model
     keras.backend.clear_session()
@@ -147,15 +203,34 @@ if __name__ == '__main__':
 
     #1.A Read Galaxy features (name of file, path, n_split, test size, random state)
     if os.path.isfile(MERGED_GALAXY_PRIMITIVE):
-        features, features_SVM, answers, dataset_splitter = Data.prepareDataset("Galaxy", MERGED_GALAXY_PRIMITIVE, 5, 0.2, 0)
+        features, features_SVM, answers, dataset_splitter = Data.prepareDataset("Galaxy", MERGED_GALAXY_PRIMITIVE, 5, 0.3, 0)
     else:
-        features, features_SVM, answers, dataset_splitter = Data.prepareDataset("Galaxy", ALL_GALAXY_PRIMITIVE, 5, 0.2, 0)
+        features, features_SVM, answers, dataset_splitter = Data.prepareDataset("Galaxy", ALL_GALAXY_PRIMITIVE, 5, 0.3, 0)
 
     print("ALGORITHMS")
+    print("\nDecision Tree:")
+    Tree.decisionTree(features, answers)
+    print("\nSVM:")
+    #svm()
+
     print("\nNeural Network:")
-    neuralNetwork(1, [100, 100, 2], 60, 0.0005)
-    neuralNetwork(2, [100, 150, 80, 30, 2], 100, 0.005)
-    neuralNetwork(3, [80, 100, 120, 100, 80, 40, 20, 2], 80, 0.05)
+    print("TensorFlow version:" + tf.VERSION + ", Keras version:" + tf.keras.__version__ + "\n")
+    # Diff number of layer
+    #neuralNetwork(1, [100, 100, 2], 60, 0.0005)
+    #neuralNetwork(2, [100, 2], 60, 0.0005)
+    #neuralNetwork(3, [100, 100, 100, 100, 2], 60, 0.0005)
+    # Diff perceptron
+    #neuralNetwork(4, [80, 50, 2], 60, 0.0005)
+    #neuralNetwork(5, [120, 2], 60, 0.0005)
+    #neuralNetwork(6, [100, 120, 100, 50, 2], 60, 0.0005)
+    # Diff epoch
+    #neuralNetwork(7, [100, 100, 2], 60, 0.0005)
+    #neuralNetwork(8, [100, 2], 20, 0.0005)
+    #neuralNetwork(9, [100, 100, 100, 100, 2], 100, 0.0005)
+    # Diff learning
+    #neuralNetwork(10, [100, 100, 2], 60, 0.0005)
+    #neuralNetwork(11, [100, 2], 60, 0.005)
+    #neuralNetwork(12, [100, 100, 100, 100, 2], 60, 0.05)
 
     """
     #2.A Execute Algorithm
