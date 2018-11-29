@@ -26,6 +26,7 @@ from helpers import image as imageObj
 from helpers import imageV2 as imageVectors
 from helpers import imageV2 as imageVectors_SVM
 from helpers import spam
+from helpers import music
 
 
 #LAB01
@@ -160,7 +161,7 @@ def loadAllImages(skipHeader, dataPath, imageFolderPath):
 ####################
 #       LAB02      #
 ####################
-def prepareDataset(datasetName, dataset, n_splits, test_size, random_state):
+def prepareDatasetLab2(datasetName, dataset, n_splits, test_size, random_state):
     print("PREPARING DATASETS")
     allData_length = len(list(csv.reader(open(dataset))))
     progress = 0
@@ -207,3 +208,96 @@ def prepareDataset(datasetName, dataset, n_splits, test_size, random_state):
     print("-> Done\n\n")
 
     return features_scaled, features_SVM_scaled, answers, dataset_splitter
+####################
+#       LAB04      #
+####################
+def prepareTrainDataset(datasetName, dataset):
+    print("PREPARING DATASETS")
+    allData_length = len(list(csv.reader(open(dataset))))
+    progress = 0
+    datas = []
+
+    print("Reading " + datasetName + " features:")
+    utils.printProgressBar(0, allData_length, prefix='Progress:', suffix='Complete', length=50)
+    with open(dataset, 'r') as theFile:
+        primitives = csv.reader(theFile, delimiter=',', quotechar='|')
+
+        for row in primitives:
+            progress += 1
+            utils.printProgressBar(progress+1, allData_length, prefix='Progress', suffix='Complete', length=50)
+
+            #values = [float(i) for i in row]
+            datas.append(music.Music(row))
+    
+    features = []
+    answers = []
+    for data in np.array(datas):
+        features.append(data.features)
+        answers.append(data.answer)
+    
+    #4. Scale data
+    dataScaler = MinMaxScaler()
+    dataScaler.fit(features)
+    features_scaled = dataScaler.transform(features)
+    print("\n-> Done\n")
+    return features_scaled , answers
+    
+def splitDataSet(features,answers, n_splits, test_size, random_state):
+    
+    #Split dataset using model_selection
+    print("Splitting Dataset according to these params:")
+    print(tabulate([['Property', 'Value'], ['n_splits', n_splits], ['test_size', test_size], ['random_state', random_state]], headers="firstrow"))
+    
+    dataset_splitter = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size, random_state=random_state)
+    
+    # Format arrays to np arrays
+    features_train = []
+    answers_train = []
+    features_test = []
+    answers_test = []
+
+    for train_index, test_index in dataset_splitter.split(features, answers):
+        for elem in train_index:
+            features_train.append(features[elem])
+            answers_train.append(answers[elem])
+
+        for elem in test_index:
+            features_test.append(features[elem])
+            answers_test.append(answers[elem])
+    
+    print("-> Done\n\n")
+
+    return features_train,answers_train,features_test,answers_test
+
+def prepareTestDataset(datasetName, dataset, n_splits, test_size, random_state):
+    print("PREPARING DATASETS")
+    allData_length = len(list(csv.reader(open(dataset))))
+    progress = 0
+    datas = []
+
+    print("Reading " + datasetName + " features:")
+    utils.printProgressBar(0, allData_length, prefix='Progress:', suffix='Complete', length=50)
+    with open(dataset, 'r') as theFile:
+        primitives = csv.reader(theFile, delimiter=',', quotechar='|')
+
+        for row in primitives:
+            progress += 1
+            utils.printProgressBar(progress+1, allData_length, prefix='Progress', suffix='Complete', length=50)
+
+            values = [float(i) for i in row]
+            datas.append(music.Music(values))
+            
+    features = []
+    answers = []
+    for data in np.array(datas):
+        features.append(data.features)
+        answers.append(data.answer)
+    
+    #4. Scale data
+    dataScaler = MinMaxScaler()
+    dataScaler.fit(features)
+    features_scaled = dataScaler.transform(features)
+
+    print("-> Done\n\n")
+
+    return features_scaled,answers

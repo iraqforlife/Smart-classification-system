@@ -23,7 +23,7 @@ from sklearn.neighbors  import KNeighborsClassifier
 from tabulate import tabulate
 
 # Params
-N_NEIGHBORS = [3, 5, 10]
+N_NEIGHBORS = [1, 3, 5, 10, 15]
 WEIGHTS = ['uniform', 'distance']
 
 def knn(features, answers, doPrintGraph):
