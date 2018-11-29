@@ -25,7 +25,7 @@ from tabulate import tabulate
 TREE_DEPTH = [None, 3, 5, 10]
 VALIDATION_METHOD = ['Holdout', 'Stratified Shuffle Split']
 
-def decisionTree(features, answers):
+def decisionTree(features, answers, doPrintGraph):
     """
     Algorithme 'Decision Tree' utilisé pour classer les données qui lui sont fourni
     Args:
@@ -62,8 +62,9 @@ def decisionTree(features, answers):
         print("\nThe best is depth = %s" %(grid.best_params_['max_depth']))
         print()
         
-        utils.printGraph('Profondeur de l\'arbre', 'Précision', [0, 3, 5, 10], precision, [])
-        utils.printGraph('Profondeur de l\'arbre', 'Score F1', [0, 3, 5, 10], score_f1, [])
+        if doPrintGraph:
+            utils.printGraph('Profondeur de l\'arbre', 'Précision', [0, 3, 5, 10], precision, [])
+            utils.printGraph('Profondeur de l\'arbre', 'Score F1', [0, 3, 5, 10], score_f1, [])
         validationCounter += 1
     
     print(str(validationCounter)+".Training best params with 10-fold cross-validation\n")

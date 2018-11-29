@@ -26,7 +26,7 @@ N_NEIGHBORS = [3, 5, 10]
 VALIDATION_METHOD = ['Holdout', 'Stratified Shuffle Split']
 WEIGHTS = ['uniform', 'distance']
 
-def knn(features, answers):
+def knn(features, answers, doPrintGraph):
     """
     Algorithme 'KNN' utilisé pour classer les données qui lui sont fourni
     Args:
@@ -70,8 +70,9 @@ def knn(features, answers):
         print("\nThe best is KNN %s With K = %s" %(grid.best_params_['weights'], grid.best_params_['n_neighbors']))
         print()
         
-        utils.printGraph('K', 'Précision', [3, 5, 10], precision_un, precision_di)
-        utils.printGraph('K', 'Score F1', [3, 5, 10], score_f1_un, score_f1_di)
+        if doPrintGraph:
+            utils.printGraph('K', 'Précision', [3, 5, 10], precision_un, precision_di)
+            utils.printGraph('K', 'Score F1', [3, 5, 10], score_f1_un, score_f1_di)
         validationCounter += 1
     
     print("\n"+str(validationCounter)+".Training best params with 10-fold cross-validation\n")

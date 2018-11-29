@@ -25,7 +25,7 @@ from tabulate import tabulate
 
 VALIDATION_METHOD = ['Holdout', 'Stratified Shuffle Split']
 
-def bayes(features, answers):
+def bayes(features, answers, doPrintGraph):
     validationCounter = 1
     for method in VALIDATION_METHOD:
         validation = None
@@ -74,8 +74,9 @@ def bayes(features, answers):
             print("\nThe best is Bayes with %s data" %(label))
         print()
         
-        utils.printGraph('Type de données', 'Précision', [0.3], precision_norm, precision_disct)
-        utils.printGraph('Type de données', 'Score F1', [0.8], score_f1_norm, score_f1_disct)
+        if doPrintGraph:
+            utils.printGraph('Type de données', 'Précision', [0.3], precision_norm, precision_disct)
+            utils.printGraph('Type de données', 'Score F1', [0.8], score_f1_norm, score_f1_disct)
         validationCounter += 1
     
     print("\n"+str(validationCounter)+".Training with 10-fold cross-validation\n")
