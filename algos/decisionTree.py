@@ -22,8 +22,8 @@ from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit, Shuffl
 from sklearn.tree import DecisionTreeClassifier
 from tabulate import tabulate
 
+# Params
 TREE_DEPTH = [None, 3, 5, 10]
-VALIDATION_METHOD = ['Holdout', 'Stratified Shuffle Split']
 
 def decisionTree(features, answers, doPrintGraph):
     """
@@ -31,43 +31,36 @@ def decisionTree(features, answers, doPrintGraph):
     Args:
         --
     """
-    validationCounter = 1
-    for method in VALIDATION_METHOD:
-        validation = None
-        if method == 'Holdout':
-            validation = ShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
-        elif method == 'Stratified Shuffle Split':
-            validation = StratifiedShuffleSplit()
-        
-        print(str(validationCounter)+".Training with "+method+"\n")
-        dTreePerf = [['Depth', 'Accuracy', 'Precision', 'F1']]
-        params = dict(max_depth=TREE_DEPTH)
-        grid = GridSearchCV(DecisionTreeClassifier(), param_grid=params, cv=validation, n_jobs=-1, iid=True, scoring={'accuracy', 'precision', 'f1'}, refit='accuracy')
+    validation = StratifiedShuffleSplit()
 
-        #Fit data to Decision Tree algo
-        grid.fit(features, answers)
+    print("1.Training \n")
+    dTreePerf = [['Depth', 'Accuracy', 'Precision', 'F1']]
+    params = dict(max_depth=TREE_DEPTH)
+    grid = GridSearchCV(DecisionTreeClassifier(), param_grid=params, cv=validation, n_jobs=-1, iid=True, scoring={'accuracy', 'precision', 'f1'}, refit='accuracy')
 
-        #Loop through results
-        precision = []
-        score_f1 = []
-        for i in range(0, 4):
-            dTreePerf.append([grid.cv_results_['params'][i]['max_depth'],
-                              "{0:.2f}".format(grid.cv_results_['mean_test_accuracy'][i]*100),
-                              "{0:.2f}".format(grid.cv_results_['mean_test_precision'][i]*100),
-                              "{0:.2f}".format(grid.cv_results_['mean_test_f1'][i]*100)])
-            precision.append(grid.cv_results_['mean_test_accuracy'][i])
-            score_f1.append(grid.cv_results_['mean_test_f1'][i])
-            
-        print(tabulate(dTreePerf, headers="firstrow"))
-        print("\nThe best is depth = %s" %(grid.best_params_['max_depth']))
-        print()
+    #Fit data to Decision Tree algo
+    grid.fit(features, answers)
+
+    #Loop through results
+    precision = []
+    score_f1 = []
+    for i in range(0, 4):
+        dTreePerf.append([grid.cv_results_['params'][i]['max_depth'],
+                            "{0:.2f}".format(grid.cv_results_['mean_test_accuracy'][i]*100),
+                            "{0:.2f}".format(grid.cv_results_['mean_test_precision'][i]*100),
+                            "{0:.2f}".format(grid.cv_results_['mean_test_f1'][i]*100)])
+        precision.append(grid.cv_results_['mean_test_accuracy'][i])
+        score_f1.append(grid.cv_results_['mean_test_f1'][i])
         
-        if doPrintGraph:
-            utils.printGraph('Profondeur de l\'arbre', 'Précision', [0, 3, 5, 10], precision, [])
-            utils.printGraph('Profondeur de l\'arbre', 'Score F1', [0, 3, 5, 10], score_f1, [])
-        validationCounter += 1
+    print(tabulate(dTreePerf, headers="firstrow"))
+    print("\nThe best is depth = %s" %(grid.best_params_['max_depth']))
+    print()
     
-    print(str(validationCounter)+".Training best params with 10-fold cross-validation\n")
+    if doPrintGraph:
+        utils.printGraph('Profondeur de l\'arbre', 'Précision', [0, 3, 5, 10], precision, [])
+        utils.printGraph('Profondeur de l\'arbre', 'Score F1', [0, 3, 5, 10], score_f1, [])
+    
+    print("2.Training best params with 10-fold cross-validation\n")
     dTreePerf = [['Depth', 'Accuracy', 'Precision', 'F1']]
     params = dict(max_depth=[grid.best_params_['max_depth']])
     bestGrid = GridSearchCV(DecisionTreeClassifier(), param_grid=params, cv=10, n_jobs=-1, iid=True, scoring={'accuracy', 'precision', 'f1'}, refit='accuracy')
