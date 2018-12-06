@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tabulate import tabulate
 from sklearn.model_selection import StratifiedShuffleSplit
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 from helpers import utilities as utils
 from helpers import image as imageObj
 from helpers import imageV2 as imageVectors
@@ -211,11 +211,37 @@ def prepareDatasetLab2(datasetName, dataset, n_splits, test_size, random_state):
 ####################
 #       LAB04      #
 ####################
+def musicFeatures(row):
+    '''
+        Transform the CSV file data into useful data
+        
+        params:
+            row: the csv row with all the data 
+        
+        return:
+            feature list 
+            label
+    '''
+    answer = row[-1]
+    id = row[1]
+    #remove the answer
+    del row[-1]
+    #remove the identifier (ex:27)
+    del row[0]
+    #remove The id (ex:TRAAAAK128F9318786)
+    del row[0]
+
+    features = [float(i) for i in row]
+    
+    return features,answer
+
 def prepareTrainDataset(datasetName, dataset):
     print("PREPARING DATASETS")
     allData_length = len(list(csv.reader(open(dataset))))
     progress = 0
-    datas = []
+    
+    features = []
+    answers = []
 
     print("Reading " + datasetName + " features:")
     utils.printProgressBar(0, allData_length, prefix='Progress:', suffix='Complete', length=50)
@@ -227,18 +253,18 @@ def prepareTrainDataset(datasetName, dataset):
             utils.printProgressBar(progress+1, allData_length, prefix='Progress', suffix='Complete', length=50)
 
             #values = [float(i) for i in row]
-            datas.append(music.Music(row))
-    
-    features = []
-    answers = []
-    for data in np.array(datas):
-        features.append(data.features)
-        answers.append(data.answer)
+            feature, answer = musicFeatures(row)            
+            features.append(feature)
+            answers.append(answer)
     
     #4. Scale data
     dataScaler = MinMaxScaler()
     dataScaler.fit(features)
     features_scaled = dataScaler.transform(features)
+    #5 Transform labels
+    le = LabelEncoder()
+    le.fit(answers)
+    answers = le.transform(answers)
     print("\n-> Done\n")
     return features_scaled , answers
     
@@ -268,36 +294,3 @@ def splitDataSet(features,answers, n_splits, test_size, random_state):
     print("-> Done\n\n")
 
     return features_train,answers_train,features_test,answers_test
-
-def prepareTestDataset(datasetName, dataset, n_splits, test_size, random_state):
-    print("PREPARING DATASETS")
-    allData_length = len(list(csv.reader(open(dataset))))
-    progress = 0
-    datas = []
-
-    print("Reading " + datasetName + " features:")
-    utils.printProgressBar(0, allData_length, prefix='Progress:', suffix='Complete', length=50)
-    with open(dataset, 'r') as theFile:
-        primitives = csv.reader(theFile, delimiter=',', quotechar='|')
-
-        for row in primitives:
-            progress += 1
-            utils.printProgressBar(progress+1, allData_length, prefix='Progress', suffix='Complete', length=50)
-
-            values = [float(i) for i in row]
-            datas.append(music.Music(values))
-            
-    features = []
-    answers = []
-    for data in np.array(datas):
-        features.append(data.features)
-        answers.append(data.answer)
-    
-    #4. Scale data
-    dataScaler = MinMaxScaler()
-    dataScaler.fit(features)
-    features_scaled = dataScaler.transform(features)
-
-    print("-> Done\n\n")
-
-    return features_scaled,answers

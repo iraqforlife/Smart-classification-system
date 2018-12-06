@@ -33,9 +33,9 @@ def knn(features, answers, doPrintGraph):
         --
     """   
     print("1.Training \n")
-    knnPerf = [['Weights', 'K', 'Accuracy', 'Precision', 'F1']]
+    knnPerf = [['Weights', 'K', 'Accuracy']]
     params = dict(n_neighbors=N_NEIGHBORS, weights=WEIGHTS, algorithm=['auto'])
-    grid = GridSearchCV(KNeighborsClassifier(), param_grid=params, cv=10, n_jobs=-1, iid=False, scoring={'accuracy', 'precision', 'f1'}, refit='accuracy')
+    grid = GridSearchCV(KNeighborsClassifier(), param_grid=params, cv=10, n_jobs=-1, iid=False)
     #Fit data to knn algo
     grid.fit(features, answers)
 
@@ -44,19 +44,14 @@ def knn(features, answers, doPrintGraph):
     score_f1_un = []
     precision_di = []
     score_f1_di = []
-    for i in range(0, 6):
-        knnPerf.append([grid.cv_results_['params'][i]['weights'],
-                        grid.cv_results_['params'][i]['n_neighbors'],
-                        "{0:.2f}".format(grid.cv_results_['mean_test_accuracy'][i]*100),
-                        "{0:.2f}".format(grid.cv_results_['mean_test_precision'][i]*100),
-                        "{0:.2f}".format(grid.cv_results_['mean_test_f1'][i]*100)])
+    for i in range(0, 10):
+        knnPerf.append([grid.cv_results_['params'][i]['weights'],grid.cv_results_['params'][i]['n_neighbors'],"{0:.2f}".format(grid.cv_results_['mean_test_score'][i]*100)])
+                        
         if grid.cv_results_['params'][i]['weights'] == 'uniform':
-            precision_un.append(grid.cv_results_['mean_test_accuracy'][i])
-            score_f1_un.append(grid.cv_results_['mean_test_f1'][i])
+            precision_un.append(grid.cv_results_['mean_test_score'][i])                    
         elif grid.cv_results_['params'][i]['weights'] == 'distance':
-            precision_di.append(grid.cv_results_['mean_test_accuracy'][i])
-            score_f1_di.append(grid.cv_results_['mean_test_f1'][i])
-
+            precision_di.append(grid.cv_results_['mean_test_score'][i])
+        
     print(tabulate(knnPerf, headers="firstrow"))
     print(grid.best_params_)
     print("\nThe best is KNN %s With K = %s" %(grid.best_params_['weights'], grid.best_params_['n_neighbors']))
@@ -64,7 +59,6 @@ def knn(features, answers, doPrintGraph):
     
     if doPrintGraph:
         utils.printGraph('K', 'Précision', [3, 5, 10], precision_un, precision_di)
-        utils.printGraph('K', 'Score F1', [3, 5, 10], score_f1_un, score_f1_di)
     
     print("-> Done\n\n")
     return KNeighborsClassifier(weights=grid.best_params_['weights'], n_neighbors=grid.best_params_['n_neighbors'])
