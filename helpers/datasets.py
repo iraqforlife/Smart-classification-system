@@ -208,6 +208,8 @@ def prepareDatasetLab2(datasetName, dataset, n_splits, test_size, random_state):
     print("-> Done\n\n")
 
     return features_scaled, features_SVM_scaled, answers, dataset_splitter
+
+
 ####################
 #       LAB04      #
 ####################

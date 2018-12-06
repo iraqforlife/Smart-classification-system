@@ -17,61 +17,128 @@ Group :
 GTI770-A18-02
 """
 
-from helpers import utilities as utils
-from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit, ShuffleSplit
+from helpers import utilities as Utils
+from sklearn.model_selection import GridSearchCV
 from sklearn.tree import DecisionTreeClassifier
-from tabulate import tabulate
+from tabulate import tabulate as Tabulate
 
-# Params
-TREE_DEPTH = [None, 3, 5, 10]
+class decisionTree(object):
+    def __init__(self, validationMethod, max_depth):
+        """
+        Initialisation d'un classifier KNN
+        Args:
+            features:           Array de données
+            answers:            Array de label
+            ValidationMethod:   Type de validation à utiliser
+        """
+        print("\nNew Decision Tree Classifier")        
+        self.validationMethod = validationMethod
+        self.max_depth = max_depth
+        self.precision = []
+        self.score_f1 = []
+        self.best_params = []
 
-def decisionTree(features, answers, doPrintGraph):
-    """
-    Algorithme 'Decision Tree' utilisé pour classer les données qui lui sont fourni
-    Args:
-        --
-    """
-    validation = StratifiedShuffleSplit()
+    def evaluate(self, features, answers):
+        """
+        Évaluation d'un classifier Decision Tree
+        Args:
+            features:           Array de données
+            answers:            Array de label
+            ValidationMethod:   Type de validation à utiliser
+        """
+        print("1.Evaluation \n")
+        dTreePerf = [['Depth', 'Accuracy', 'Precision', 'F1']]
+        params = dict(max_depth=self.max_depth)
+        grid = GridSearchCV(DecisionTreeClassifier(),
+                            param_grid=params,
+                            cv=self.validationMethod,
+                            n_jobs=-1,
+                            iid=True,
+                            scoring={'accuracy', 'precision', 'f1'},
+                            refit='accuracy')
 
-    print("1.Training \n")
-    dTreePerf = [['Depth', 'Accuracy', 'Precision', 'F1']]
-    params = dict(max_depth=TREE_DEPTH)
-    grid = GridSearchCV(DecisionTreeClassifier(), param_grid=params, cv=validation, n_jobs=-1, iid=True, scoring={'accuracy', 'precision', 'f1'}, refit='accuracy')
+        #Fit data to Decision Tree algo
+        grid.fit(features, answers)
 
-    #Fit data to Decision Tree algo
-    grid.fit(features, answers)
-
-    #Loop through results
-    precision = []
-    score_f1 = []
-    for i in range(0, 4):
-        dTreePerf.append([grid.cv_results_['params'][i]['max_depth'],
-                            "{0:.2f}".format(grid.cv_results_['mean_test_accuracy'][i]*100),
-                            "{0:.2f}".format(grid.cv_results_['mean_test_precision'][i]*100),
-                            "{0:.2f}".format(grid.cv_results_['mean_test_f1'][i]*100)])
-        precision.append(grid.cv_results_['mean_test_accuracy'][i])
-        score_f1.append(grid.cv_results_['mean_test_f1'][i])
+        #Loop through results
+        for i in range(0, 4):
+            dTreePerf.append([grid.cv_results_['params'][i]['max_depth'],
+                                "{0:.2f}".format(grid.cv_results_['mean_test_accuracy'][i]*100),
+                                "{0:.2f}".format(grid.cv_results_['mean_test_precision'][i]*100),
+                                "{0:.2f}".format(grid.cv_results_['mean_test_f1'][i]*100)])
+            self.precision.append(grid.cv_results_['mean_test_accuracy'][i])
+            self.score_f1.append(grid.cv_results_['mean_test_f1'][i])
+            
+        print(Tabulate(dTreePerf, headers="firstrow"))
+        print("\nThe best is depth = %s" %(grid.best_params_['max_depth']))
+        print()
         
-    print(tabulate(dTreePerf, headers="firstrow"))
-    print("\nThe best is depth = %s" %(grid.best_params_['max_depth']))
-    print()
+        self.best_params = grid.best_params_
+        print("-> Done\n\n")
     
-    if doPrintGraph:
-        utils.printGraph('Profondeur de l\'arbre', 'Précision', [0, 3, 5, 10], precision, [])
-        utils.printGraph('Profondeur de l\'arbre', 'Score F1', [0, 3, 5, 10], score_f1, [])
-    
-    print("2.Training best params with 10-fold cross-validation\n")
-    dTreePerf = [['Depth', 'Accuracy', 'Precision', 'F1']]
-    params = dict(max_depth=[grid.best_params_['max_depth']])
-    bestGrid = GridSearchCV(DecisionTreeClassifier(), param_grid=params, cv=10, n_jobs=-1, iid=True, scoring={'accuracy', 'precision', 'f1'}, refit='accuracy')
-    
-    #Fit data to Decision Tree algo
-    bestGrid.fit(features, answers)
-    
-    dTreePerf.append([bestGrid.cv_results_['params'][0]['max_depth'],
-                      "{0:.2f}".format(bestGrid.cv_results_['mean_test_accuracy'][0]*100),
-                      "{0:.2f}".format(bestGrid.cv_results_['mean_test_precision'][0]*100),
-                      "{0:.2f}".format(bestGrid.cv_results_['mean_test_f1'][0]*100)])
-    
-    print(tabulate(dTreePerf, headers="firstrow"))
-    print("-> Done\n\n")
+    def train(self, features, answers):
+        """
+        Entrainement du meilleur modèle
+        Args:
+            features:           Array de données
+            answers:            Array de label
+            ValidationMethod:   Type de validation à utiliser
+        """
+        print("1.Training \n")
+        dTreePerf = [['Depth', 'Accuracy']]
+        model = DecisionTreeClassifier(max_depth=self.max_depth)
+
+        #Fit data to Decision Tree algo
+        model.fit(features, answers)
+
+        #Save through results
+        dTreePerf.append([self.max_depth, "{0:.2f}".format(model.score(features, answers)*100)])
+        self.precision.append(model.score(features, answers))
+            
+        print(Tabulate(dTreePerf, headers="firstrow"))
+        print()
+        
+        print("-> Done\n\n")
+
+    def printGraph(self, precision, score_f1):
+        """
+        Affiche un graphique comparant la précision et le score F1 de deux classifier
+        Args:
+            precision: Array des données de précision du classifier en comparaison
+            score_f1: Array des données de score F1 du classifier en comparaison
+        """
+        if (len(self.precision) != len(precision)):
+            print("Les tableaux de données fournient n'ont pas la même dimension")
+        else:
+            Utils.printGraph('Profondeur de l\'arbre', 'Précision', [0, 3, 5, 10], self.precision, precision)
+            Utils.printGraph('Profondeur de l\'arbre', 'Score F1', [0, 3, 5, 10], self.score_f1, score_f1)
+
+    def getPrecision(self):
+        """
+        Renvoi un array des données de précision
+        Args:
+
+        Return: 
+            precision: Array des données de précision du classifier en comparaison
+        """
+        return self.precision
+
+    def getScoreF1(self):
+        """
+        Renvoi un array des données de score f1
+        Args:
+
+        Return:
+            score_f1: Array des données de score F1 du classifier en comparaison
+        """
+        return self.score_f1
+
+    def getBestParams(self):
+        """
+        Renvoi un array des meilleurs paramètres
+        Args:
+
+        Return:
+            score_f1: Array des meilleurs paramètres du classifier en comparaison
+        """
+        return self.best_params

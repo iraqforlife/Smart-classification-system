@@ -19,15 +19,11 @@ GTI770-A18-02
 from algos import DecisionTree
 from algos import Knn
 from algos import Bayes
-import csv
-import math
-import os
-
-import graphviz
-import numpy as np
-from sklearn.model_selection import GridSearchCV
-
+from algos import NeuralNetwork
+from algos import SVM
 from helpers import datasets as Data
+from sklearn.model_selection import StratifiedShuffleSplit
+import os
 
 ####################
 #      GLOBAL      #
@@ -49,21 +45,74 @@ ALL_SPAM_PRIMITIVE = r"data\csv\spam\spam.csv"
 PRINT_GRAPH = False
 #TEST_NBSAMPLES = 50
 
+def findBaselineClassifier(xLabel, yLabel, algosData, printGraph):
+    print()
+
+def getBestComparedModels(models):
+    """
+    Compare deux modèle différent du classifier et retourne le meilleur
+    Args:
+        models: Liste des Models en comparaison
+    """
+    best_model = ""
+
+    for model in models:
+        if best_model == "":
+            best_model = model
+        else:
+            if best_model.getPrecision < model.getPrecision:
+                best_model = model
+
+    return best_model
+
 ####################
 #       MAIN       #
 ####################
 if __name__ == '__main__':
     #1.A Read features (name of file, path, n_split, test size, random state)
     if os.path.isfile(MERGED_GALAXY_PRIMITIVE):
-        features, features_SVM, answers, dataset_splitter = Data.prepareDataset("Galaxy", MERGED_GALAXY_PRIMITIVE, 5, 0.3, 0)
+        features, features_SVM, answers, dataset_splitter = Data.prepareDatasetLab2("Galaxy", MERGED_GALAXY_PRIMITIVE, 5, 0.2, 0)
     else:
-        features, features_SVM, answers, dataset_splitter = Data.prepareDataset("Galaxy", ALL_GALAXY_PRIMITIVE, 5, 0.3, 0)
+        features, features_SVM, answers, dataset_splitter = Data.prepareDatasetLab2("Galaxy", ALL_GALAXY_PRIMITIVE, 5, 0.2, 0)
 
     print("ALGORITHMS")
-    print("\nDecision Tree:")
-    #DecisionTree.decisionTree(features_SVM, answers, PRINT_GRAPH)
-    print("\nSVM:")
-    Knn.knn(features, answers, PRINT_GRAPH)
+    # Decision Tree
+    basicDTree = DecisionTree.decisionTree(5, [None, 3, 5, 10])
+    basicDTree.evaluate(features_SVM, answers)
+    # Best Decision Tree
+    params = basicDTree.getBestParams()
+    print(params['max_depth'])
+    bestDTree = DecisionTree.decisionTree(10, params['max_depth'])
+    bestDTree.train(features_SVM, answers)
+    #---------------------------------------------------------------------------------------
+    
+    # KNN uniform
+    uniformKnn = Knn.knn(5, [1, 3, 5, 10], ['uniform', 'distance'])
+    uniformKnn.evaluate(features_SVM, answers)
+    params = uniformKnn.getBestParams()
+    bestUniformKnn = Knn.knn(10, params['n_neighbors'], params['weights'])
+    #Compare Best
+    #uniformKnn.printGraph(distanceKnn.getPrecision(), distanceKnn.getScoreF1())
+    #bestKnn = getBestComparedModels([bestUniformKnn, bestDistanceKnn])
+    #---------------------------------------------------------------------------------------
+
+    # Bayes
+    basicBayesM = Bayes.bayes(5, "multinomialnb", False)
+    basicBayesM.train(features_SVM, answers)
+
+    basicBayesM2 = Bayes.bayes(5, "multinomialnb", True)
+    basicBayesM2.train(features_SVM, answers)
+
+    basicBayesG = Bayes.bayes(5, "gaussiannb", False)
+    basicBayesG.train(features_SVM, answers)
+    #---------------------------------------------------------------------------------------
+
+    # Scan for baseline classifier
+    """baselineClassifier = findBaselineClassifier([[basicDTree.getPrecision(), basicDTree.getScoreF1()],
+                                                 [distanceKnn.getPrecision(), distanceKnn.getScoreF1()],
+                                                 [basicBayesG.getPrecision(), basicBayesG.getScoreF1()]], 
+                                                 ''
+                                                 True)"""
     #svm()
 
     print("\nNeural Network:")
