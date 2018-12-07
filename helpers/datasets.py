@@ -21,6 +21,7 @@ import numpy as np
 from tabulate import tabulate
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.preprocessing import MinMaxScaler, LabelEncoder
+from sklearn import decomposition
 from helpers import utilities as utils
 from helpers import image as imageObj
 from helpers import imageV2 as imageVectors
@@ -225,7 +226,7 @@ def musicFeatures(row):
             label
     '''
     answer = row[-1]
-    id = row[1]
+    musicId = row[1]
     #remove the answer
     del row[-1]
     #remove the identifier (ex:27)
@@ -235,7 +236,7 @@ def musicFeatures(row):
 
     features = [float(i) for i in row]
     
-    return features,answer
+    return features,answer,musicId
 
 def prepareTrainDataset(datasetName, dataset):
     print("PREPARING DATASETS")
@@ -254,8 +255,7 @@ def prepareTrainDataset(datasetName, dataset):
             progress += 1
             utils.printProgressBar(progress+1, allData_length, prefix='Progress', suffix='Complete', length=50)
 
-            #values = [float(i) for i in row]
-            feature, answer = musicFeatures(row)            
+            feature, answer, mId = musicFeatures(row)            
             features.append(feature)
             answers.append(answer)
     
@@ -263,12 +263,14 @@ def prepareTrainDataset(datasetName, dataset):
     dataScaler = MinMaxScaler()
     dataScaler.fit(features)
     features_scaled = dataScaler.transform(features)
-    #5 Transform labels
+    #5 PCA
+    transformed =  decomposition.PCA(n_components=0.95).fit_transform(features_scaled)
+    #6 Transform labels
     le = LabelEncoder()
     le.fit(answers)
     answers = le.transform(answers)
     print("\n-> Done\n")
-    return features_scaled , answers
+    return transformed , answers, le
     
 def splitDataSet(features,answers, n_splits, test_size, random_state):
     
@@ -283,16 +285,51 @@ def splitDataSet(features,answers, n_splits, test_size, random_state):
     answers_train = []
     features_test = []
     answers_test = []
-
-    for train_index, test_index in dataset_splitter.split(features, answers):
-        for elem in train_index:
-            features_train.append(features[elem])
-            answers_train.append(answers[elem])
-
-        for elem in test_index:
-            features_test.append(features[elem])
-            answers_test.append(answers[elem])
+    splited = dataset_splitter.split(features, answers)
+        
+    for train_index, test_index in splited:
+        features_train, features_test = features[train_index], features[test_index]
+        answers_train, answers_test = answers[train_index], answers[test_index]
     
     print("-> Done\n\n")
 
     return features_train,answers_train,features_test,answers_test
+
+def prepareTestDataset(datasetName, dataset):
+    print("PREPARING DATASETS")
+    allData_length = len(list(csv.reader(open(dataset))))
+    progress = 0
+    
+    features = []
+    ids=[]
+
+    print("Reading " + datasetName + " features:")
+    utils.printProgressBar(0, allData_length, prefix='Progress:', suffix='Complete', length=50)
+    with open(dataset, 'r') as theFile:
+        primitives = csv.reader(theFile, delimiter=',', quotechar='|')
+
+        for row in primitives:
+            progress += 1
+            utils.printProgressBar(progress+1, allData_length, prefix='Progress', suffix='Complete', length=50)
+
+            feature, answer, mId = musicFeatures(row)            
+            features.append(feature)
+            ids.append(mId)
+    
+    #4. Scale data
+    dataScaler = MinMaxScaler()
+    dataScaler.fit(features)
+    features_scaled = dataScaler.transform(features)
+    #5 PCA
+    transformed =  decomposition.PCA(n_components=0.95).fit_transform(features_scaled)
+    print("\n-> Done\n")
+    return transformed , ids
+
+def outPut(ids,answers):    
+    assert(len(ids)==len(answers))
+    file = open("output.csv", "w")
+    
+    for index in range(0,len(ids)):
+        file.write("%s;%s" % (ids[index],answers[index]))
+        file.write("\n")
+    print("file creation is done2.")   
