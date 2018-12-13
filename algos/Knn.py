@@ -38,23 +38,23 @@ class knn(object):
         self.precision = []
         self.score_f1 = []
         self.best_params = []
+        self.best_score = 0
 
     def evaluate(self, features, answers):
         """
-        Initialisation d'un classifier KNN
+        Évaluation d'un classifier
         Args:
             features:           Array de données
             answers:            Array de label
             ValidationMethod:   Type de validation à utiliser
         """
-        print("1.Training \n")
+        print("1.Evaluation \n")
         knnPerf = [['Weights', 'K', 'Accuracy']]
         params = dict(n_neighbors=self.n_neighbors, weights=self.weights, algorithm=['auto'])
         grid = GridSearchCV(KNeighborsClassifier(),
                             param_grid=params,
                             cv=self.validationMethod,
-                            n_jobs=1,
-                            iid=False)
+                            n_jobs=-1)
 
         #Fit data to knn algo
         grid.fit(features, answers)
@@ -68,15 +68,39 @@ class knn(object):
             self.precision.append([grid.cv_results_['params'][i]['weights'], grid.cv_results_['mean_test_score'][i]])
             self.score_f1.append([grid.cv_results_['params'][i]['weights'], grid.cv_results_['mean_test_score'][i]])
 
+        #Print table
         print(Tabulate(knnPerf, headers="firstrow"))
-        print(grid.best_params_)
-        print("\nThe best is KNN %s With K = %s" %(grid.best_params_['weights'], grid.best_params_['n_neighbors']))
+        print("The best parameters are ", grid.best_params_, " with a score of {0:.2f}%".format(float(grid.best_score_)* 100))
         print()
         
         self.best_params = grid.best_params_
+        self.best_score = grid.best_score_
         print("-> Done\n\n")
 
-        print(self.precision)
+    def train(self, features, answers):
+        """
+        Entrainement d'un classifier
+        Args:
+            features:           Array de données
+            answers:            Array de label
+            ValidationMethod:   Type de validation à utiliser
+        """
+        print("1.Training \n")
+        knnPerf = [['Weights', 'K', 'Accuracy']]
+        model = KNeighborsClassifier(n_neighbors=self.n_neighbors, weights=self.weights)
+
+        #Fit data to Decision Tree algo
+        model.fit(features, answers)
+
+        #Save results
+        knnPerf.append([self.weights, self.n_neighbors, "{0:.2f}".format(model.score(features, answers)*100)])
+        self.precision.append(model.score(features, answers))
+        self.best_score = self.precision[0]
+
+        print(Tabulate(knnPerf, headers="firstrow"))
+        print()
+
+        print("-> Done\n\n")
 
     def printGraph(self, precision, score_f1):
         """
@@ -90,6 +114,16 @@ class knn(object):
         else:
             Utils.printGraph('K', 'Précision', [1, 3, 5, 10], self.precision, precision)
             Utils.printGraph('K', 'Score F1', [1, 3, 5, 10], self.score_f1, score_f1)
+
+    def getDefinition(self):
+        """
+        Renvoi la définition du modèle
+        Args:
+
+        Return:
+            best_score: Le meilleur résultat
+        """
+        return ['Plus proche voisin (KNN):', self.best_params]
 
     def getPrecision(self):
         """
@@ -120,3 +154,13 @@ class knn(object):
             score_f1: Array des meilleurs paramètres du classifier en comparaison
         """
         return self.best_params
+
+    def getBestScore(self):
+        """
+        Renvoi le meilleur score
+        Args:
+
+        Return:
+            best_score: Le meilleur résultat
+        """
+        return self.best_score
