@@ -129,14 +129,19 @@ def splitDataSet(features, answers, n_splits, test_size, random_state):
     features_test = []
     answers_test = []
     splited = dataset_splitter.split(features, answers)
-        
+    
+    trainIndexes = []
+    testIndexes = []
+    
     for train_index, test_index in splited:
+        trainIndexes = train_index 
+        testIndexes = test_index
         features_train, features_test = features[train_index], features[test_index]
         answers_train, answers_test = answers[train_index], answers[test_index]
     
     print("-> Done\n\n")
 
-    return features_train, answers_train, features_test, answers_test
+    return features_train, answers_train, features_test, answers_test, trainIndexes,testIndexes
 
 def outPut(ids, answers):
     assert len(ids) == len(answers)
