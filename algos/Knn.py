@@ -101,6 +101,7 @@ class knn(object):
         print()
 
         print("-> Done\n\n")
+        return model
 
     def printGraph(self, precision, score_f1):
         """
