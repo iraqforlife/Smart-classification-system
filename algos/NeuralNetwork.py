@@ -188,6 +188,8 @@ class neuralNetwork(object):
         #Print table
         print(Tabulate(mlpPerf, headers='firstrow'))
         print()
+        
+        return model
 
     def printGraph(self, precision, score_f1):
         """
