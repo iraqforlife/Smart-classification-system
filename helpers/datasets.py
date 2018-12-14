@@ -111,7 +111,7 @@ def prepareTrainDataset(datasetName, dataset, isTraining):
     print("\n-> Done\n")
 
     if isTraining:
-        return features_PCA, answers
+        return features_PCA, answers, le
     else:
         return features_PCA, ids
     
@@ -141,7 +141,7 @@ def splitDataSet(features, answers, n_splits, test_size, random_state):
     
     print("-> Done\n\n")
 
-    return features_train, answers_train, features_test, answers_test, trainIndexes,testIndexes
+    return features_train, answers_train, features_test, answers_test, trainIndexes, testIndexes
 
 def outPut(ids, answers):
     assert len(ids) == len(answers)
