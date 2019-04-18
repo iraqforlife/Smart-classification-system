@@ -1,6 +1,6 @@
 [![GitHub issues](https://img.shields.io/github/issues/pldelisle/gti770-student-framework.svg)](https://github.com/pldelisle/gti770-student-framework/issues) [![GitHub stars](https://img.shields.io/github/stars/pldelisle/gti770-student-framework.svg)](https://github.com/pldelisle/gti770-student-frameworkt/) [![GitHub forks](https://img.shields.io/github/forks/pldelisle/gti770-student-framework.svg)](https://github.com/pldelisle/gti770-student-framework/network) ![GitHub license](https://img.shields.io/badge/license-MIT-yellow.svg) 
 
-# ÉTS GTI770 Systèmes intelligents et apprentissage machine Student Code Repository
+# ÉTS Systèmes intelligents et apprentissage machine Student Code Repository
 <img src="images/code.png" width="96" height="96" vertical-align="bottom">
 
 ### Introduction
